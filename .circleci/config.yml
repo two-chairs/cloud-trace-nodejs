@@ -143,12 +143,6 @@ jobs:
         user: node
     steps:
       - checkout
-      - run:
-          name: Set NPM authentication.
-          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-      - run:
-          name: Install modules and dependencies.
-          command: npm install
-      - run:
-          name: Publish the module to npm.
-          command: npm publish
+      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - run: npm install
+      - run: npm publish
