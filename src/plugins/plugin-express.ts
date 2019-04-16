@@ -18,6 +18,7 @@ import * as httpMethods from 'methods';
 import * as shimmer from 'shimmer';
 
 import {PluginTypes} from '..';
+import {RootSpan} from '../plugin-types';
 
 import {express_4} from './types';
 
@@ -42,7 +43,7 @@ function patchModuleRoot(express: Express4Module, api: PluginTypes.Tracer) {
       method: req.method,
       skipFrames: 1
     };
-    api.runInRootSpan(options, (rootSpan) => {
+    api.runInRootSpan(options, (rootSpan: RootSpan) => {
       // Set response trace context.
       const responseTraceContext = api.getResponseTraceContext(
           options.traceContext || null, api.isRealSpan(rootSpan));
@@ -62,6 +63,11 @@ function patchModuleRoot(express: Express4Module, api: PluginTypes.Tracer) {
       rootSpan.addLabel(labels.HTTP_METHOD_LABEL_KEY, req.method);
       rootSpan.addLabel(labels.HTTP_URL_LABEL_KEY, url);
       rootSpan.addLabel(labels.HTTP_SOURCE_IP, req.ip);
+
+      if (req.path === '/readiness') {
+        rootSpan.addLabel('debugging/spanType', rootSpan.type);
+        rootSpan.addLabel('debugging/traceContext', rootSpan.getTraceContext());
+      }
 
       // wrap end
       const originalEnd = res.end;

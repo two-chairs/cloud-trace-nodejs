@@ -158,8 +158,16 @@ export class StackdriverTracer implements Tracer {
     return this.config;
   }
 
+  log(options: RootSpanOptions, message: string) {
+    if (options.name === '/readiness') {
+      console.log(`DEBUG: ${message}`);
+    }
+  }
+
   runInRootSpan<T>(options: RootSpanOptions, fn: (span: RootSpan) => T): T {
     if (!this.isActive()) {
+      this.log(
+          options, 'TraceApi#runInRootSpan: Running with untraced root span');
       return fn(UNTRACED_ROOT_SPAN);
     }
 
@@ -170,6 +178,10 @@ export class StackdriverTracer implements Tracer {
     if (rootSpan.type === SpanType.ROOT && !rootSpan.span.endTime) {
       this.logger!.warn(`TraceApi#runInRootSpan: [${
           this.pluginNameToLog}] Cannot create nested root spans.`);
+      this.log(
+          options,
+          `TraceApi#runInRootSpan: [${
+              this.pluginNameToLog}] Running with uncorrelated root span, warning: Cannot create nested root spans.`);
       return fn(UNCORRELATED_ROOT_SPAN);
     }
 
@@ -205,8 +217,24 @@ export class StackdriverTracer implements Tracer {
     let rootContext: RootSpan&RootContext;
     // Don't create a root span if the trace policy disallows it.
     if (!locallyAllowed || !remotelyAllowed) {
+      this.log(
+          options,
+          'TraceApi#runInRootSpan: Tracing in untraced root span due to policy ' +
+              `locallyAllowed: [${locallyAllowed}], remotelyAllowed: [${
+                  remotelyAllowed}]. ` +
+              `Running with untraced root span`);
       rootContext = UNTRACED_ROOT_SPAN;
     } else {
+      this.log(
+          options,
+          `TraceApi#runInRootSpan: [${
+              this.pluginNameToLog}] Tracing with locally allowed: ` +
+              `[${locallyAllowed}], remotely allowed: [${remotelyAllowed}], ` +
+              `incomingTraceContext: [${
+                  JSON.stringify(incomingTraceContext)}], ` +
+              `contextHeaderBehavior: [${
+                  this.config!.contextHeaderBehavior}], ` +
+              `options.traceContext: [${options.traceContext}]`);
       // Create a new root span, and invoke fn with it.
       const traceId =
           incomingTraceContext.traceId || (uuid.v4().split('-').join(''));
