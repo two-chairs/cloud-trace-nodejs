@@ -1,4 +1,7 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var _a;
+"use strict";
 /**
  * Copyright 2015 Google Inc. All Rights Reserved.
  *
@@ -14,10 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-var _a;
-"use strict";
 const path = require("path");
+const sourceMapSupport = require("source-map-support");
 const { hexToDec, decToHex } = require('hex2dec');
 // This symbol must be exported (for now).
 // See: https://github.com/Microsoft/TypeScript/issues/20080
@@ -164,7 +165,7 @@ function createStackTrace(numFrames, skipFrames, constructorOpt) {
     const origPrepare = Error.prepareStackTrace;
     Error.prepareStackTrace =
         (error, structured) => {
-            return structured;
+            return structured.map(sourceMapSupport.wrapCallSite);
         };
     const e = {};
     Error.captureStackTrace(e, constructorOpt);
