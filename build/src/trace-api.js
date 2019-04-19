@@ -126,7 +126,7 @@ class StackdriverTracer {
         return this.config;
     }
     log(options, message) {
-        if (options.name === '/readiness') {
+        if (options.name === '/readiness' || options.name.endsWith('/update')) {
             console.log(`DEBUG: ${message}`);
         }
     }

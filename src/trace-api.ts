@@ -159,7 +159,7 @@ export class StackdriverTracer implements Tracer {
   }
 
   log(options: RootSpanOptions, message: string) {
-    if (options.name === '/readiness') {
+    if (options.name === '/readiness' || options.name.endsWith('/update')) {
       console.log(`DEBUG: ${message}`);
     }
   }
