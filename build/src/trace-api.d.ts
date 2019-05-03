@@ -124,7 +124,6 @@ export declare class StackdriverTracer implements Tracer {
     isActive(): boolean;
     enhancedDatabaseReportingEnabled(): boolean;
     getConfig(): StackdriverTracerConfig;
-    log(options: RootSpanOptions, message: string): void;
     runInRootSpan<T>(options: RootSpanOptions, fn: (span: RootSpan) => T): T;
     getCurrentRootSpan(): RootSpan;
     getCurrentContextId(): string | null;
