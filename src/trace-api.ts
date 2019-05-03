@@ -46,7 +46,13 @@ export enum TraceContextHeaderBehavior {
   /**
    * Trace every request as a new trace, even if trace context exists.
    */
-  IGNORE = 'ignore'
+  IGNORE = 'ignore',
+  /**
+   * Respect the trace context header and **always** trace it, ignoring local
+   * trace policies such as sampling rate, url, and method; otherwise, trace the
+   * request as a new trace and apply policies.
+   */
+  END_TO_END = 'end-to-end'
 }
 
 /**
@@ -181,7 +187,13 @@ export class StackdriverTracer implements Tracer {
             TraceContextHeaderBehavior.IGNORE) {
       parsedContext = util.parseContextFromHeader(options.traceContext);
     }
+    let ignoreLocalPolicy = false;
     if (parsedContext) {
+      if (parsedContext.options &&
+          this.config!.contextHeaderBehavior ===
+              TraceContextHeaderBehavior.END_TO_END) {
+        ignoreLocalPolicy = true;
+      }
       if (parsedContext.options === undefined) {
         // If there are no incoming option flags, default to 0x1.
         parsedContext.options = 1;
@@ -194,11 +206,12 @@ export class StackdriverTracer implements Tracer {
     }
 
     // Consult the trace policy.
-    const locallyAllowed = this.policy!.shouldTrace({
+    const locallyAllowed = ignoreLocalPolicy || this.policy!.shouldTrace({
       timestamp: Date.now(),
       url: options.url || '',
       method: options.method || ''
     });
+
     const remotelyAllowed = !!(
         incomingTraceContext.options & Constants.TRACE_OPTIONS_TRACE_ENABLED);
 
