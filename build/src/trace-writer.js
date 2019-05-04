@@ -14,14 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const common = require("@google-cloud/common");
 const gcpMetadata = require("gcp-metadata");
@@ -123,79 +115,73 @@ class TraceWriter extends common.Service {
     getConfig() {
         return this.config;
     }
-    initialize() {
-        return __awaiter(this, void 0, void 0, function* () {
-            // Schedule periodic flushing of the buffer, but only if we are able to get
-            // the project number (potentially from the network.)
-            const getProjectIdAndScheduleFlush = () => __awaiter(this, void 0, void 0, function* () {
-                try {
-                    yield this.getProjectId();
-                }
-                catch (err) {
-                    this.logger.error('TraceWriter#initialize: Unable to acquire the project number', 'automatically from the GCP metadata service. Please provide a', 'valid project ID as environmental variable GCLOUD_PROJECT, or', `as config.projectId passed to start. Original error: ${err}`);
-                    throw err;
-                }
-                this.scheduleFlush();
-            });
-            // getProjectIdAndScheduleFlush has no return value, so no need to capture
-            // it on the left-hand side.
-            const [hostname, instanceId] = yield Promise.all([
-                this.getHostname(), this.getInstanceId(), getProjectIdAndScheduleFlush()
-            ]);
-            const addDefaultLabel = (key, value) => {
-                this.defaultLabels[key] = `${value}`;
-            };
-            this.defaultLabels = {};
-            addDefaultLabel(trace_labels_1.TraceLabels.AGENT_DATA, `node ${pjson.name} v${pjson.version}`);
-            addDefaultLabel(trace_labels_1.TraceLabels.GCE_HOSTNAME, hostname);
-            if (instanceId) {
-                addDefaultLabel(trace_labels_1.TraceLabels.GCE_INSTANCE_ID, instanceId);
-            }
-            const moduleName = this.config.serviceContext.service || hostname;
-            addDefaultLabel(trace_labels_1.TraceLabels.GAE_MODULE_NAME, moduleName);
-            const moduleVersion = this.config.serviceContext.version;
-            if (moduleVersion) {
-                addDefaultLabel(trace_labels_1.TraceLabels.GAE_MODULE_VERSION, moduleVersion);
-                const minorVersion = this.config.serviceContext.minorVersion;
-                if (minorVersion) {
-                    let versionLabel = '';
-                    if (moduleName !== 'default') {
-                        versionLabel = moduleName + ':';
-                    }
-                    versionLabel += moduleVersion + '.' + minorVersion;
-                    addDefaultLabel(trace_labels_1.TraceLabels.GAE_VERSION, versionLabel);
-                }
-            }
-            Object.freeze(this.defaultLabels);
-        });
-    }
-    getHostname() {
-        return __awaiter(this, void 0, void 0, function* () {
+    async initialize() {
+        // Schedule periodic flushing of the buffer, but only if we are able to get
+        // the project number (potentially from the network.)
+        const getProjectIdAndScheduleFlush = async () => {
             try {
-                return yield gcpMetadata.instance({ property: 'hostname', headers });
+                await this.getProjectId();
             }
             catch (err) {
-                if (err.code !== 'ENOTFOUND') {
-                    // We are running on GCP.
-                    this.logger.warn('TraceWriter#getHostname: Encountered an error while', 'retrieving GCE hostname from the GCP metadata service', `(metadata.google.internal): ${err}`);
-                }
-                return os.hostname();
+                this.logger.error('TraceWriter#initialize: Unable to acquire the project number', 'automatically from the GCP metadata service. Please provide a', 'valid project ID as environmental variable GCLOUD_PROJECT, or', `as config.projectId passed to start. Original error: ${err}`);
+                throw err;
             }
-        });
+            this.scheduleFlush();
+        };
+        // getProjectIdAndScheduleFlush has no return value, so no need to capture
+        // it on the left-hand side.
+        const [hostname, instanceId] = await Promise.all([
+            this.getHostname(), this.getInstanceId(), getProjectIdAndScheduleFlush()
+        ]);
+        const addDefaultLabel = (key, value) => {
+            this.defaultLabels[key] = `${value}`;
+        };
+        this.defaultLabels = {};
+        addDefaultLabel(trace_labels_1.TraceLabels.AGENT_DATA, `node ${pjson.name} v${pjson.version}`);
+        addDefaultLabel(trace_labels_1.TraceLabels.GCE_HOSTNAME, hostname);
+        if (instanceId) {
+            addDefaultLabel(trace_labels_1.TraceLabels.GCE_INSTANCE_ID, instanceId);
+        }
+        const moduleName = this.config.serviceContext.service || hostname;
+        addDefaultLabel(trace_labels_1.TraceLabels.GAE_MODULE_NAME, moduleName);
+        const moduleVersion = this.config.serviceContext.version;
+        if (moduleVersion) {
+            addDefaultLabel(trace_labels_1.TraceLabels.GAE_MODULE_VERSION, moduleVersion);
+            const minorVersion = this.config.serviceContext.minorVersion;
+            if (minorVersion) {
+                let versionLabel = '';
+                if (moduleName !== 'default') {
+                    versionLabel = moduleName + ':';
+                }
+                versionLabel += moduleVersion + '.' + minorVersion;
+                addDefaultLabel(trace_labels_1.TraceLabels.GAE_VERSION, versionLabel);
+            }
+        }
+        Object.freeze(this.defaultLabels);
     }
-    getInstanceId() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                return yield gcpMetadata.instance({ property: 'id', headers });
+    async getHostname() {
+        try {
+            return await gcpMetadata.instance({ property: 'hostname', headers });
+        }
+        catch (err) {
+            if (err.code !== 'ENOTFOUND') {
+                // We are running on GCP.
+                this.logger.warn('TraceWriter#getHostname: Encountered an error while', 'retrieving GCE hostname from the GCP metadata service', `(metadata.google.internal): ${err}`);
             }
-            catch (err) {
-                if (err.code !== 'ENOTFOUND') {
-                    // We are running on GCP.
-                    this.logger.warn('TraceWriter#getInstanceId: Encountered an error while', 'retrieving GCE instance ID from the GCP metadata service', `(metadata.google.internal): ${err}`);
-                }
-                return null;
+            return os.hostname();
+        }
+    }
+    async getInstanceId() {
+        try {
+            return await gcpMetadata.instance({ property: 'id', headers });
+        }
+        catch (err) {
+            if (err.code !== 'ENOTFOUND') {
+                // We are running on GCP.
+                this.logger.warn('TraceWriter#getInstanceId: Encountered an error while', 'retrieving GCE instance ID from the GCP metadata service', `(metadata.google.internal): ${err}`);
             }
-        });
+            return null;
+        }
     }
     getProjectId() {
         // super.getProjectId writes to projectId, but doesn't check it first
