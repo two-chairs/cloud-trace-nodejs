@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 export declare type CLSMechanism = 'async-hooks' | 'async-listener' | 'auto' | 'none' | 'singular';
-export declare type ContextHeaderBehavior = 'default' | 'ignore' | 'require';
+export declare type ContextHeaderBehavior = 'default' | 'ignore' | 'require' | 'end-to-end';
 /**
  * Available configuration options. All fields are optional. See the
  * defaultConfig object defined in this file for default assigned values.

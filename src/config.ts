@@ -22,7 +22,7 @@ const pluginDirectory =
 export type CLSMechanism =
     'async-hooks'|'async-listener'|'auto'|'none'|'singular';
 
-export type ContextHeaderBehavior = 'default'|'ignore'|'require';
+export type ContextHeaderBehavior = 'default'|'ignore'|'require'|'end-to-end';
 
 /**
  * Available configuration options. All fields are optional. See the
