@@ -38,7 +38,13 @@ export declare enum TraceContextHeaderBehavior {
     /**
      * Trace every request as a new trace, even if trace context exists.
      */
-    IGNORE = "ignore"
+    IGNORE = "ignore",
+    /**
+     * Respect the trace context header and **always** trace it, ignoring local
+     * trace policies such as sampling rate, url, and method; otherwise, trace the
+     * request as a new trace and apply policies.
+     */
+    END_TO_END = "end-to-end"
 }
 /**
  * An interface describing configuration fields read by the StackdriverTracer

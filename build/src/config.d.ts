@@ -242,6 +242,7 @@ export declare const defaultConfig: {
         'http2': string;
         'koa': string;
         'mongodb-core': string;
+        'mongoose': string;
         'mysql': string;
         'mysql2': string;
         'pg': string;
