@@ -89,9 +89,9 @@ class TracePolicy {
      *                created.
      */
     shouldTrace(options) {
-        return this.sampler.shouldTrace(options.timestamp) &&
-            this.urlFilter.shouldTrace(options.url) &&
-            this.methodsFilter.shouldTrace(options.method);
+        return this.urlFilter.shouldTrace(options.url) &&
+            this.methodsFilter.shouldTrace(options.method) &&
+            this.sampler.shouldTrace(options.timestamp);
     }
     static always() {
         return new TracePolicy({ samplingRate: 0, ignoreUrls: [], ignoreMethods: [] });
