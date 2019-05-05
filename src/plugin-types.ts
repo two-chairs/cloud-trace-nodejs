@@ -64,6 +64,12 @@ export interface Span {
    * was called if not provided.
    */
   endSpan(timestamp?: Date): void;
+
+  /**
+   * Sets the parent span. The argument must be a valid span ID.
+   * @param parentSpanId A parent span ID (numeric string).
+   */
+  setParentSpanId(parentSpanId: string): void;
 }
 
 /**

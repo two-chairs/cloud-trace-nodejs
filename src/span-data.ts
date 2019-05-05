@@ -109,6 +109,10 @@ export abstract class BaseSpanData implements Span {
     timestamp = timestamp || new Date();
     this.span.endTime = timestamp.toISOString();
   }
+
+  setParentSpanId(parentSpanId: string) {
+    this.span.parentSpanId = parentSpanId;
+  }
 }
 
 /**
