@@ -22,7 +22,7 @@ class Sampler implements TracePolicyPredicate<number> {
   private readonly traceWindow: number;
   private nextTraceStart: number;
 
-  constructor(samplesPerSecond: number) {
+  constructor(samplesPerSecond: number, nextTraceStart?: number) {
     if (samplesPerSecond > 1000) {
       samplesPerSecond = 1000;
     }
@@ -48,6 +48,7 @@ class MultiSampler implements TracePolicyPredicate<MultiSamplerArgs> {
   private readonly samplers: Record<string, Sampler>;
   private readonly samplesPerSecond: number;
   private unnamedSampler: Sampler;
+  private samplerStart: number;
 
   constructor(samplesPerSecond: number) {
     if (samplesPerSecond > 1000) {
@@ -56,6 +57,7 @@ class MultiSampler implements TracePolicyPredicate<MultiSamplerArgs> {
     this.samplesPerSecond = samplesPerSecond;
     this.samplers = {};
     this.unnamedSampler = new Sampler(samplesPerSecond);
+    this.samplerStart = new Date().getTime();
   }
 
   shouldTrace({name, dateMillis}: MultiSamplerArgs): boolean {
@@ -71,7 +73,8 @@ class MultiSampler implements TracePolicyPredicate<MultiSamplerArgs> {
 
     let sampler: Sampler|undefined = this.samplers[name];
     if (!sampler) {
-      this.samplers[name] = sampler = new Sampler(this.samplesPerSecond);
+      this.samplers[name] = sampler =
+          new Sampler(this.samplesPerSecond, this.samplerStart);
     }
     return sampler;
   }
@@ -158,7 +161,8 @@ export class TracePolicy {
   }): boolean {
     return this.urlFilter.shouldTrace(options.url) &&
         this.methodsFilter.shouldTrace(options.method) &&
-        this.sampler.shouldTrace({name: options.name, dateMillis: options.timestamp});
+        this.sampler.shouldTrace(
+            {name: options.name, dateMillis: options.timestamp});
   }
 
   static always(): TracePolicy {
