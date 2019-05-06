@@ -90,6 +90,9 @@ class BaseSpanData {
         timestamp = timestamp || new Date();
         this.span.endTime = timestamp.toISOString();
     }
+    setParentSpanId(parentSpanId) {
+        this.span.parentSpanId = parentSpanId;
+    }
 }
 exports.BaseSpanData = BaseSpanData;
 /**

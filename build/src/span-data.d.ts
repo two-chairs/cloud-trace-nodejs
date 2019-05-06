@@ -36,6 +36,7 @@ export declare abstract class BaseSpanData implements Span {
     getTraceContext(): string;
     addLabel(key: string, value: any): void;
     endSpan(timestamp?: Date): void;
+    setParentSpanId(parentSpanId: string): void;
 }
 /**
  * Represents a real root span, which corresponds to an incoming request.

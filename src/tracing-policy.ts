@@ -39,6 +39,44 @@ class Sampler implements TracePolicyPredicate<number> {
   }
 }
 
+interface MultiSamplerArgs {
+  name?: string;
+  dateMillis: number;
+}
+
+class MultiSampler implements TracePolicyPredicate<MultiSamplerArgs> {
+  private readonly samplers: Record<string, Sampler>;
+  private readonly samplesPerSecond: number;
+  private unnamedSampler: Sampler;
+
+  constructor(samplesPerSecond: number) {
+    if (samplesPerSecond > 1000) {
+      samplesPerSecond = 1000;
+    }
+    this.samplesPerSecond = samplesPerSecond;
+    this.samplers = {};
+    this.unnamedSampler = new Sampler(samplesPerSecond);
+  }
+
+  shouldTrace({name, dateMillis}: MultiSamplerArgs): boolean {
+    const sampler: Sampler|undefined = this.getSampler(name);
+
+    return sampler.shouldTrace(dateMillis);
+  }
+
+  private getSampler(name?: string) {
+    if (!name) {
+      return this.unnamedSampler;
+    }
+
+    let sampler: Sampler|undefined = this.samplers[name];
+    if (!sampler) {
+      this.samplers[name] = sampler = new Sampler(this.samplesPerSecond);
+    }
+    return sampler;
+  }
+}
+
 class URLFilter implements TracePolicyPredicate<string> {
   constructor(private readonly filterUrls: Array<string|RegExp>) {}
 
@@ -82,7 +120,7 @@ export interface TracePolicyConfig {
  * A class that makes decisions about whether a trace should be created.
  */
 export class TracePolicy {
-  private readonly sampler: TracePolicyPredicate<number>;
+  private readonly sampler: TracePolicyPredicate<MultiSamplerArgs>;
   private readonly urlFilter: TracePolicyPredicate<string>;
   private readonly methodsFilter: TracePolicyPredicate<string>;
 
@@ -96,7 +134,7 @@ export class TracePolicy {
     } else if (config.samplingRate < 0) {
       this.sampler = {shouldTrace: () => false};
     } else {
-      this.sampler = new Sampler(config.samplingRate);
+      this.sampler = new MultiSampler(config.samplingRate);
     }
     if (config.ignoreUrls.length === 0) {
       this.urlFilter = {shouldTrace: () => true};
@@ -115,11 +153,12 @@ export class TracePolicy {
    * @param options Fields that help determine whether a trace should be
    *                created.
    */
-  shouldTrace(options: {timestamp: number, url: string, method: string}):
-      boolean {
+  shouldTrace(options: {
+    name?: string, timestamp: number, url: string, method: string
+  }): boolean {
     return this.urlFilter.shouldTrace(options.url) &&
         this.methodsFilter.shouldTrace(options.method) &&
-        this.sampler.shouldTrace(options.timestamp);
+        this.sampler.shouldTrace({name, dateMillis: options.timestamp});
   }
 
   static always(): TracePolicy {
