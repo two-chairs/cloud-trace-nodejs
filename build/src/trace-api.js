@@ -169,6 +169,7 @@ class StackdriverTracer {
         }
         // Consult the trace policy.
         const locallyAllowed = ignoreLocalPolicy || this.policy.shouldTrace({
+            name: options.name,
             timestamp: Date.now(),
             url: options.url || '',
             method: options.method || ''
