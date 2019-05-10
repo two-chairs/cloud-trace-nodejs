@@ -64,11 +64,6 @@ function patchModuleRoot(express: Express4Module, api: PluginTypes.Tracer) {
       rootSpan.addLabel(labels.HTTP_URL_LABEL_KEY, url);
       rootSpan.addLabel(labels.HTTP_SOURCE_IP, req.ip);
 
-      if (req.path === '/readiness') {
-        rootSpan.addLabel('debugging/spanType', rootSpan.type);
-        rootSpan.addLabel('debugging/traceContext', rootSpan.getTraceContext());
-      }
-
       // wrap end
       const originalEnd = res.end;
       res.end = function(this: express_4.Response) {
